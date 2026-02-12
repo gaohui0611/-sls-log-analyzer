@@ -594,6 +594,10 @@
       to { transform: rotate(360deg); }
     }
 
+    .btn-refresh-icon.spinning {
+      animation: spin 1s linear infinite;
+    }
+
     /* 提示框 */
     .alert {
       padding: 14px 18px;
@@ -1260,7 +1264,11 @@
       </div>
       <div class="form-group">
         <label class="form-label">API Key</label>
-        <input type="password" class="form-input" id="editAiApiKey" placeholder="留空则不修改">
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <input type="password" class="form-input" id="editAiApiKey" placeholder="留空则不修改" style="flex: 1;">
+          <span id="editAiKeyStatus" style="font-size: 18px; display: none;">🔒</span>
+        </div>
+        <small style="color: var(--apple-text-secondary); margin-top: 4px; display: block;" id="editAiKeyHint">输入新的 API Key 或留空使用已保存的 Key</small>
       </div>
       <div class="form-group" id="editBaseUrlGroup" style="display:none;">
         <label class="form-label">API Base URL</label>
@@ -1270,13 +1278,15 @@
         <label class="form-label">模型</label>
         <input type="text" class="form-input" id="editAiModel">
       </div>
+      <div id="editAiResult" style="margin-bottom: 16px;"></div>
       <div class="modal-actions">
         <button class="btn btn-secondary" onclick="closeEditAiModal()">取消</button>
+        <button class="btn btn-success" onclick="testEditAiConfig()" style="margin-right: auto;">🧪 测试</button>
         <button class="btn btn-primary" onclick="saveEditAiConfig()">保存</button>
       </div>
     </div>
   </div>
 
-  <script src="/app.js?v=20260212-19"></script>
+  <script src="/app.js?v=20260212-27"></script>
 </body>
 </html>

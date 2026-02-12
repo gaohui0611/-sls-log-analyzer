@@ -58,11 +58,11 @@ All configuration is stored in `config.json` (created automatically). Contains:
 
 SLS API authentication uses browser cookies (not official API keys). Two sync methods:
 
-1. **Auto Sync** (`/api/auto-sync-auth`): Uses Puppeteer to launch browser, user manually logs in to SLS console, then extracts cookies and headers automatically.
+1. **Auto Sync** (`/api/auto-sync-auth`): Uses Puppeteer to launch browser, user manually logs in to SLS console, then extracts cookies and headers automatically. Spawns non-headless browser, waits up to 3 minutes for user login.
 
-2. **Bookmark Sync** (`/api/bookmark-sync`): Browser bookmark tool extracts cookies and sends to server.
+2. **Bookmark Sync** (`/api/bookmark-sync`): Browser bookmark tool extracts cookies from current session. Less reliable than auto-sync but works when Puppeteer fails. The bookmarklet must be run while logged into SLS console.
 
-**Auth validation**: The system performs a test log query to verify auth is valid (not just checking cookies exist). Auth has ~30 day validity.
+**Auth validation**: The system performs a test log query to verify auth is valid (not just checking cookies exist). Auth has ~30 day validity. Cookie timestamp is stored for age tracking.
 
 ### Log Analysis Pipeline
 
@@ -130,11 +130,19 @@ SLS logs use a specific structure:
 - All API responses use `{ success: boolean, data?: any, error?: string }` format
 
 ### Time Parser
-Uses switch statement with case-sensitive string matching. All time ranges return Unix timestamps (seconds) and formatted strings for display. Default is `thisWeek`.
+Uses switch statement with case-sensitive string matching. Supported ranges:
+- `today`, `yesterday`
+- `thisWeek`, `lastWeek`
+- `thisMonth`, `lastMonth`
+- `last7days`, `last30days`
+
+All time ranges return Unix timestamps (seconds) and formatted strings for display. Default is `thisWeek`.
 
 ### Report Generation
 Reports are saved with UUID filenames. Each report contains:
 - Metadata (project, query, time range, log counts)
-- Basic stats (level breakdown, error/warning lists)
-- AI analysis (if configured)
-- Raw log samples
+- Basic stats (level breakdown, error/warning lists, unique traces/users)
+- AI analysis (if configured) - includes provider, model, content, and token usage
+- Raw log samples (up to `size` parameter, default 100)
+
+**Error handling**: AI analysis failures are stored as `{ error: message }` in the report rather than failing the entire analysis. A 180-second timeout is applied to AI calls.

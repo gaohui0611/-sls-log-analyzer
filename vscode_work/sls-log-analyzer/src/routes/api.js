@@ -78,6 +78,11 @@ router.post('/config', async (req, res) => {
         }
 
         if (aiConfig) {
+            // 过滤掉占位符 API Key，避免覆盖真实配置
+            const placeholders = ['•••••••••••••••', '••••••••••••••'];
+            if (aiConfig.apiKey && placeholders.includes(aiConfig.apiKey)) {
+                delete aiConfig.apiKey;
+            }
             config.aiConfig = { ...config.aiConfig, ...aiConfig };
         }
 

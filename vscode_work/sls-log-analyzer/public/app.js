@@ -27,15 +27,15 @@ function hideLoading(elementId) {
 function showAlert(elementId, message, type = 'info') {
     const container = document.getElementById(elementId);
     if (!container) return;
-    
+
     // 在容器开头插入提示，而不是替换整个内容
     const alertDiv = document.createElement('div');
     alertDiv.className = `alert alert-${type}`;
     alertDiv.innerHTML = message;
     alertDiv.style.cssText = 'margin-bottom: 16px;';
-    
+
     container.insertBefore(alertDiv, container.firstChild);
-    
+
     setTimeout(() => {
         if (alertDiv) alertDiv.remove();
     }, 5000);
@@ -260,7 +260,6 @@ function renderAnalysisResult(data) {
         }
 
         html += `</div>`;
-
         // 错误列表
         if (data.stats.errors && data.stats.errors.length > 0) {
             html += `
@@ -319,7 +318,7 @@ async function loadReports() {
             const configResponse = await apiRequest('/config');
             state.projects = configResponse.data.projects || {};
         }
-        
+
         const response = await apiRequest('/reports');
         state.reports = response.data;
         state.reportsPage = 1; // 重置页码
@@ -364,7 +363,7 @@ function renderReports() {
                 break;
             }
         }
-        
+
         // 格式化创建时间
         const createdDate = new Date(report.createdAt);
         const timeStr = createdDate.toLocaleString('zh-CN', {
@@ -373,7 +372,7 @@ function renderReports() {
             hour: '2-digit',
             minute: '2-digit'
         });
-        
+
         return `
         <div class="report-item">
           <div class="header">
@@ -559,7 +558,7 @@ document.getElementById('saveAiConfig').addEventListener('click', async () => {
     };
 
     // 如果 API Key 不是占位符，才更新
-    if (apiKey && apiKey !== '••••••••••••••••') {
+    if (apiKey && apiKey !== '••••••••••••••') {
         aiConfig.apiKey = apiKey;
     }
 
@@ -576,7 +575,7 @@ document.getElementById('saveAiConfig').addEventListener('click', async () => {
         showAlert('ai-tab', '✅ AI 配置已保存', 'success');
         // 更新占位符状态
         if (aiConfig.apiKey) {
-            aiApiKeyInput.value = '••••••••••••••••';
+            aiApiKeyInput.value = '••••••••••••••';
             aiApiKeyInput.dataset.hasKey = 'true';
         }
     } catch (error) {
@@ -586,12 +585,19 @@ document.getElementById('saveAiConfig').addEventListener('click', async () => {
 
 // 测试 AI 配置
 document.getElementById('testAiConfig').addEventListener('click', async () => {
+    const aiApiKeyInput = document.getElementById('aiApiKey');
     const provider = document.getElementById('aiProvider').value;
-    const apiKey = document.getElementById('aiApiKey').value.trim();
+    let apiKey = aiApiKeyInput.value.trim();
     const baseUrl = document.getElementById('aiBaseUrl').value.trim();
     const model = document.getElementById('aiModel').value.trim();
 
-    if (!apiKey) {
+    // 如果是占位符，使用已保存的配置
+    if (apiKey === '•••••••••••••••') {
+        showAlert('ai-tab', '📝 将使用已保存的 API Key 进行测试', 'info');
+        apiKey = 'USE_SAVED_CONFIG';
+    }
+
+    if (!apiKey || apiKey === '••••••••••••••••') {
         showAlert('ai-tab', '请填写 API Key', 'error');
         return;
     }
@@ -646,7 +652,6 @@ document.getElementById('testAiConfig').addEventListener('click', async () => {
         </div>
       </div>
     `;
-
         showAlert('ai-tab', `❌ 测试失败: ${error.message}`, 'error');
     }
 });
@@ -679,11 +684,172 @@ document.getElementById('testAiConfigQuick')?.addEventListener('click', async ()
     }
 });
 
-// 编辑配置按钮
+// 编辑配置按钮 - 打开模态框
 document.getElementById('editAiConfigBtn')?.addEventListener('click', () => {
-    const aiApiKeyInput = document.getElementById('aiApiKey');
-    aiApiKeyInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    aiApiKeyInput.focus();
+    openEditAiModal();
+});
+
+// 打开编辑 AI 配置模态框
+function openEditAiModal() {
+    const modal = document.getElementById('editAiModal');
+    if (!modal) return;
+
+    // 预填充当前配置
+    const config = state.config || {};
+    document.getElementById('editAiProvider').value = config.aiProvider || 'anthropic';
+    document.getElementById('editAiModel').value = config.aiModel || '';
+    document.getElementById('editAiBaseUrl').value = config.aiBaseUrl || '';
+
+    // API Key：有已保存key时显示锁图标，不显示占位符
+    const apiKeyInput = document.getElementById('editAiApiKey');
+    const keyStatus = document.getElementById('editAiKeyStatus');
+    const keyHint = document.getElementById('editAiKeyHint');
+
+    if (config.hasApiKey) {
+        apiKeyInput.value = '';
+        keyStatus.style.display = 'inline';
+        keyHint.textContent = '🔒 已保存 API Key，留空保持不变或输入新的 Key';
+    } else {
+        apiKeyInput.value = '';
+        keyStatus.style.display = 'none';
+        keyHint.textContent = '输入新的 API Key 或留空使用已保存的 Key';
+    }
+
+    // 显示/隐藏 Base URL 组
+    const baseUrlGroup = document.getElementById('editBaseUrlGroup');
+    if (config.aiProvider === 'openai-compatible') {
+        baseUrlGroup.style.display = 'block';
+    } else {
+        baseUrlGroup.style.display = 'none';
+    }
+
+    // 显示模态框
+    modal.style.display = 'flex';
+}
+
+// 关闭编辑 AI 配置模态框
+function closeEditAiModal() {
+    const modal = document.getElementById('editAiModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// 在模态框中保存 AI 配置
+async function saveEditAiConfig() {
+    const resultEl = document.getElementById('editAiResult');
+    const provider = document.getElementById('editAiProvider').value;
+    const apiKey = document.getElementById('editAiApiKey').value.trim();
+    const baseUrl = document.getElementById('editAiBaseUrl').value.trim();
+    const model = document.getElementById('editAiModel').value.trim();
+
+    const aiConfig = { provider, model };
+
+    // 如果 API Key 不是占位符，才更新
+    if (apiKey && apiKey !== '•••••••••••••••') {
+        aiConfig.apiKey = apiKey;
+    }
+
+    if (baseUrl) {
+        aiConfig.baseUrl = baseUrl;
+    }
+
+    // 显示保存中状态
+    resultEl.innerHTML = '<div style="padding: 12px; background: #e3f2fd; color: #fff; border-radius: 8px;">⏳ 保存中...</div>';
+
+    try {
+        await apiRequest('/config', {
+            method: 'POST',
+            body: JSON.stringify({ aiConfig })
+        });
+
+        // 更新全局配置状态
+        state.config.aiProvider = provider;
+        state.config.aiModel = model;
+        state.config.aiBaseUrl = baseUrl;
+        if (aiConfig.apiKey) {
+            state.config.hasApiKey = true;
+        }
+
+        // 更新显示
+        const aiConfigDisplay = document.getElementById('aiConfigDisplay');
+        aiConfigDisplay.innerHTML = `
+            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                <div><strong>提供商:</strong> ${provider}</div>
+                <div><strong>模型:</strong> ${model}</div>
+                <div><strong>API Key:</strong> ${aiConfig.apiKey ? '✅ 已配置' : '❌ 未配置'}</div>
+            </div>
+        `;
+
+        // 显示成功状态
+        resultEl.innerHTML = '<div style="padding: 12px; background: #d4edda; color: #155724; border-radius: 8px;">✅ 配置已保存</div>';
+
+        // 延迟关闭模态框
+        setTimeout(() => closeEditAiModal(), 1500);
+    } catch (error) {
+        resultEl.innerHTML = `<div style="padding: 12px; background: #f8d7da; color: #721c24; border-radius: 8px;">❌ 保存失败: ${error.message}</div>`;
+    }
+}
+
+// 在模态框中测试 AI 配置
+async function testEditAiConfig() {
+    const resultEl = document.getElementById('editAiResult');
+    const provider = document.getElementById('editAiProvider').value;
+    const apiKeyInput = document.getElementById('editAiApiKey');
+    let apiKey = apiKeyInput.value.trim();
+    const baseUrl = document.getElementById('editAiBaseUrl').value.trim();
+    const model = document.getElementById('editAiModel').value.trim();
+
+    // 如果输入框为空，提示用户需要输入 key 才能测试
+    if (!apiKey) {
+        resultEl.innerHTML = '<div style="padding: 12px; background: #fff3cd; color: #856404; border-radius: 8px;">📝 请输入 API Key 进行测试（留空则保存时使用已保存的 Key）</div>';
+        return;
+    }
+
+    if (!model) {
+        resultEl.innerHTML = '<div style="padding: 12px; background: #f8d7da; color: #721c24; border-radius: 8px;">❌ 请填写模型名称</div>';
+        return;
+    }
+
+    if (provider === 'openai-compatible' && !baseUrl) {
+        resultEl.innerHTML = '<div style="padding: 12px; background: #f8d7da; color: #721c24; border-radius: 8px;">❌ 需要填写 Base URL</div>';
+        return;
+    }
+
+    // 显示测试中状态
+    resultEl.innerHTML = '<div style="padding: 12px; background: #e3f2fd; color: #0c5460; border-radius: 8px;">⏳ 测试中...</div>';
+
+    try {
+        const response = await apiRequest('/test-ai', {
+            method: 'POST',
+            body: JSON.stringify({ provider, apiKey, baseUrl, model })
+        });
+
+        const data = response.data;
+        const responseText = data.response || '';
+        resultEl.innerHTML = `<div style="padding: 12px; background: #d4edda; color: #155724; border-radius: 8px;">✅ 测试成功！<br><span style="font-size: 13px;">模型: ${data.model} | 响应: ${responseText.substring(0, 40)}${responseText.length > 40 ? '...' : ''}</span></div>`;
+    } catch (error) {
+        resultEl.innerHTML = `<div style="padding: 12px; background: #f8d7da; color: #721c24; border-radius: 8px;">❌ 测试失败: ${error.message}</div>`;
+    }
+}
+
+// ========== 报告列表 ==========
+
+// 刷新报告列表
+document.getElementById('refreshReports')?.addEventListener('click', async () => {
+    const btn = document.getElementById('refreshReports');
+    const originalHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="btn-refresh-icon spinning">🔄</span><span>刷新中...</span>';
+    try {
+        await loadReports();
+        showAlert('reports-tab', '✅ 报告列表已刷新', 'success');
+    } catch (error) {
+        showAlert('reports-tab', `❌ 刷新失败: ${error.message}`, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+    }
 });
 
 // ========== 认证设置 ==========
@@ -691,10 +857,10 @@ document.getElementById('editAiConfigBtn')?.addEventListener('click', () => {
 async function loadAuthStatus() {
     const authStatusEl = document.getElementById('authStatus');
     const authDetailEl = document.getElementById('authDetail');
-    
+
     // 如果元素不存在，直接返回
     if (!authStatusEl) return;
-    
+
     try {
         const response = await apiRequest('/auth-status');
         const data = response.data;
@@ -703,7 +869,7 @@ async function loadAuthStatus() {
         if (data.isValid) {
             authStatusEl.className = 'status-badge valid';
             authStatusEl.innerHTML = '<span class="status-badge-icon">✅</span><span>认证有效</span>';
-            
+
             // 显示认证时间
             if (authDetailEl && data.createdAt) {
                 const createdDate = new Date(data.createdAt);
@@ -727,7 +893,7 @@ async function loadAuthStatus() {
                 }
             }
             authStatusEl.innerHTML = `<span class="status-badge-icon">⚠️</span><span>${message}</span>`;
-            
+
             // 显示错误详情
             if (authDetailEl && data.validationError) {
                 authDetailEl.innerHTML = `<p style="color: var(--apple-red);">${data.validationError}</p>`;
@@ -805,6 +971,7 @@ document.getElementById('parseCurlBtn').addEventListener('click', async () => {
         });
 
         document.getElementById('curlInput').value = '';
+
         showAlert('settings-tab', `✅ 认证信息已同步 (Cookies: ${Object.keys(parsed.cookies).length}, CSRF: ${hasCsrf ? '✓' : '✗'})`, 'success');
         loadAuthStatus();
     } catch (error) {
@@ -911,15 +1078,18 @@ async function init() {
         if (state.config.aiProvider) {
             aiProviderSelect.value = state.config.aiProvider;
         }
+
         if (state.config.aiModel) {
             aiModelInput.value = state.config.aiModel;
         }
+
         if (state.config.aiBaseUrl) {
             aiBaseUrlInput.value = state.config.aiBaseUrl;
         }
+
         // 显示 API Key 占位符
         if (state.config.hasApiKey) {
-            aiApiKeyInput.value = '••••••••••••••••';
+            aiApiKeyInput.value = '•••••••••••••••';
             aiApiKeyInput.dataset.hasKey = 'true';
         }
 
