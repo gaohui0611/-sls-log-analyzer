@@ -118,9 +118,12 @@ function renderProjects() {
     <div class="project-item" data-id="${id}">
       <div class="info">
         <h4>${project.name}</h4>
-        <p>SLS: ${project.projectName} / ${project.logStoreName}</p>
+        <p>环境ID: ${project.projectName} / 项目所属: ${project.logStoreName}</p>
       </div>
       <div class="actions">
+        <button class="btn btn-secondary btn-sm" onclick="editProject('${id}')">
+          ✏️ 编辑
+        </button>
         <button class="btn btn-danger btn-sm" onclick="deleteProject('${id}')">
           🗑️ 删除
         </button>
@@ -151,8 +154,17 @@ document.getElementById('addProjectBtn').addEventListener('click', async () => {
         return;
     }
 
-    const id = Date.now().toString();
-    state.projects[id] = { name, projectName, logStoreName };
+    const addBtn = document.getElementById('addProjectBtn');
+    const editId = addBtn.dataset.editId;
+
+    if (editId) {
+        // 更新现有项目
+        state.projects[editId] = { name, projectName, logStoreName };
+    } else {
+        // 添加新项目
+        const id = Date.now().toString();
+        state.projects[id] = { name, projectName, logStoreName };
+    }
 
     try {
         await apiRequest('/config', {
@@ -160,16 +172,61 @@ document.getElementById('addProjectBtn').addEventListener('click', async () => {
             body: JSON.stringify({ projects: state.projects })
         });
 
+        // 重置表单和按钮
         document.getElementById('newProjectName').value = '';
         document.getElementById('newSlsProject').value = '';
         document.getElementById('newLogStore').value = '';
+        addBtn.textContent = '➕ 添加项目';
+        delete addBtn.dataset.editId;
 
         loadProjects();
-        showAlert('projects-tab', '✅ 项目添加成功', 'success');
+        showAlert('projects-tab', editId ? '✅ 项目更新成功' : '✅ 项目添加成功', 'success');
     } catch (error) {
-        showAlert('projects-tab', `❌ 添加失败: ${error.message}`, 'error');
+        showAlert('projects-tab', `❌ ${editId ? '更新' : '添加'}失败: ${error.message}`, 'error');
     }
 });
+
+// 取消编辑
+document.getElementById('cancelEditBtn')?.addEventListener('click', () => {
+    const addBtn = document.getElementById('addProjectBtn');
+    const cancelBtn = document.getElementById('cancelEditBtn');
+
+    // 清空表单
+    document.getElementById('newProjectName').value = '';
+    document.getElementById('newSlsProject').value = '';
+    document.getElementById('newLogStore').value = '';
+
+    // 重置按钮状态
+    addBtn.textContent = '➕ 添加项目';
+    delete addBtn.dataset.editId;
+    cancelBtn.style.display = 'none';
+
+    showAlert('projects-tab', '已取消编辑', 'success');
+});
+
+// 编辑项目
+async function editProject(id) {
+    const project = state.projects[id];
+    if (!project) return;
+
+    // 填充表单
+    document.getElementById('newProjectName').value = project.name;
+    document.getElementById('newSlsProject').value = project.projectName;
+    document.getElementById('newLogStore').value = project.logStoreName;
+
+    // 更改添加按钮为更新按钮
+    const addBtn = document.getElementById('addProjectBtn');
+    const cancelBtn = document.getElementById('cancelEditBtn');
+    addBtn.textContent = '💾 更新项目';
+    addBtn.dataset.editId = id;
+    cancelBtn.style.display = 'inline-flex';
+
+    // 显示提示
+    showAlert('projects-tab', '✏️ 编辑模式: 修改后点击"更新项目"保存', 'success');
+
+    // 滚动到表单
+    document.querySelector('.form-group')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
 
 async function deleteProject(id) {
     if (!confirm('确定要删除这个项目吗?')) return;
@@ -237,6 +294,36 @@ function renderAnalysisResult(data) {
         <div class="stats">
           <div class="stat">📦 总数: <strong>${data.logCount}</strong></div>
           <div class="stat">📤 返回: <strong>${data.returnedCount}</strong></div>
+        </div>
+      </div>
+
+    <!-- 分析入参 -->
+    <div class="card">
+      <h3>🔧 分析入参</h3>
+      <div class="params-grid">
+        <div class="param-item">
+          <span class="param-label">环境ID</span>
+          <span class="param-value">${data.logStoreName}</span>
+        </div>
+        <div class="param-item">
+          <span class="param-label">项目名称</span>
+          <span class="param-value">${data.projectName}</span>
+        </div>
+        <div class="param-item">
+          <span class="param-label">时间范围</span>
+          <span class="param-value">${data.timeRange}</span>
+        </div>
+        <div class="param-item">
+          <span class="param-label">时间区间</span>
+          <span class="param-value">${data.timeFrom} ~ ${data.timeTo}</span>
+        </div>
+        <div class="param-item" style="grid-column: 1 / -1;">
+          <span class="param-label">查询条件</span>
+          <span class="param-value">${data.query || '全部日志'}</span>
+        </div>
+        <div class="param-item">
+          <span class="param-label">请求数量</span>
+          <span class="param-value">${data.size || 100}</span>
         </div>
       </div>
     </div>

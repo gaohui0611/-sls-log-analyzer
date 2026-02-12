@@ -148,7 +148,7 @@
       flex: 1;
       margin-left: 260px;
       padding: 32px 40px;
-      max-width: 1200px;
+      width: calc(100% - 260px);
     }
 
     /* 页面标题 */
@@ -177,6 +177,7 @@
       margin-bottom: 20px;
       box-shadow: var(--apple-shadow);
       transition: box-shadow 0.3s ease;
+      max-width: 100%;
     }
 
     .card:hover {
@@ -432,6 +433,27 @@
       gap: 16px;
       padding: 20px 24px;
       background: var(--apple-card);
+    }
+
+    .params-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      padding: 20px 24px;
+      background: var(--apple-card);
+    }
+
+    .params-grid .param-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px;
+      background: var(--apple-gray-6);
+      border-radius: var(--radius-sm);
+    }
+
+    .params-grid .param-label {
+      min-width: 80px;
     }
 
     .param-row {
@@ -913,6 +935,7 @@
       .main-content {
         margin-left: 200px;
         padding: 24px;
+        width: calc(100% - 200px);
       }
       .report-params {
         grid-template-columns: 1fr 1fr;
@@ -1068,15 +1091,18 @@
               <input type="text" class="form-input" id="newProjectName" placeholder="项目显示名称">
             </div>
             <div class="form-group">
-              <label class="form-label">SLS Project Name</label>
-              <input type="text" class="form-input" id="newSlsProject" placeholder="阿里云项目名">
+              <label class="form-label">环境ID</label>
+              <input type="text" class="form-input" id="newSlsProject" placeholder="阿里云环境ID">
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label">LogStore 名称</label>
-            <input type="text" class="form-input" id="newLogStore" placeholder="日志库名称">
+            <label class="form-label">项目所属</label>
+            <input type="text" class="form-input" id="newLogStore" placeholder="项目所属/名称">
           </div>
-          <button class="btn btn-primary" id="addProjectBtn">➕ 添加项目</button>
+          <div style="display: flex; gap: 12px;">
+            <button class="btn btn-primary" id="addProjectBtn">➕ 添加项目</button>
+            <button class="btn btn-secondary" id="cancelEditBtn" style="display: none;">❌ 取消编辑</button>
+          </div>
         </div>
 
         <div class="card">
@@ -1287,6 +1313,6 @@
     </div>
   </div>
 
-  <script src="/app.js?v=20260212-27"></script>
+  <script src="/app.js?v=20260212-32"></script>
 </body>
 </html>
