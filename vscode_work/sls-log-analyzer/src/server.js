@@ -2,6 +2,7 @@
  * SLS 日志分析系统 - Web 服务器
  */
 
+import 'dotenv/config';
 import cors from 'cors';
 import express from 'express';
 import fs from 'fs/promises';

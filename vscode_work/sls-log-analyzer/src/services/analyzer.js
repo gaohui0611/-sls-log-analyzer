@@ -85,7 +85,7 @@ export async function analyzeLogs(params) {
             console.log('[analyzer] 开始 AI 分析...');
             // 设置超时
             const timeoutPromise = new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('AI 分析超时（60秒）')), 60000)
+                setTimeout(() => reject(new Error('AI 分析超时（180秒）')), 180000)
             );
 
             aiAnalysis = await Promise.race([

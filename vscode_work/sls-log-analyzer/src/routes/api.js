@@ -164,9 +164,14 @@ router.get('/reports', async (req, res) => {
                     filename: file,
                     createdAt: new Date(stat.birthtime).toISOString(),
                     projectName: data.projectName,
+                    logStoreName: data.logStoreName,
                     query: data.query,
                     timeRange: data.timeRange,
-                    logCount: data.logCount
+                    timeFrom: data.timeFrom,
+                    timeTo: data.timeTo,
+                    size: data.size,
+                    logCount: data.logCount,
+                    returnedCount: data.returnedCount
                 });
             }
         }
@@ -223,9 +228,18 @@ router.post('/auto-sync-auth', async (req, res) => {
 
     } catch (error) {
         console.error('自动同步失败:', error);
+        
+        // 返回更详细的错误信息
+        let errorMessage = error.message;
+        if (error.message.includes('Could not find Chrome')) {
+            errorMessage = 'Chrome 浏览器未安装或路径配置错误，请使用手动同步方式';
+        } else if (error.message.includes('Failed to launch')) {
+            errorMessage = '无法启动浏览器，服务器环境可能不支持自动化同步，请使用手动同步方式';
+        }
+        
         res.status(500).json({
             success: false,
-            error: error.message
+            error: errorMessage
         });
     }
 });
@@ -418,7 +432,7 @@ router.post('/sync-auth', async (req, res) => {
 });
 
 /**
- * GET /api/auth-status - 获取认证状态
+ * GET /api/auth-status - 获取认证状态（实际验证）
  */
 router.get('/auth-status', async (req, res) => {
     try {
@@ -428,24 +442,71 @@ router.get('/auth-status', async (req, res) => {
         const hasCookies = !!slsConfig.cookies && Object.keys(slsConfig.cookies).length > 0;
         const hasCsrfToken = !!slsConfig.csrfToken;
 
-        // 检查 cookie 是否过期
-        let isExpired = false;
+        // 计算 cookie 时间相关信息
+        let createdAt = null;
+        let cookieAgeDays = 0;
+        const MAX_AGE_DAYS = 30;
+
         if (slsConfig.cookies?.timestamp) {
-            const age = Date.now() - slsConfig.cookies.timestamp;
-            isExpired = age > 30 * 24 * 60 * 60 * 1000; // 30 天
+            const timestamp = slsConfig.cookies.timestamp;
+            createdAt = new Date(timestamp).toISOString();
+            const age = Date.now() - timestamp;
+            cookieAgeDays = Math.floor(age / (24 * 60 * 60 * 1000));
         }
 
-        // 简化验证：只要有 cookies 且未过期就认为有效
-        const isValid = hasCookies && !isExpired;
+        // 实际验证：调用 SLS API 检测认证是否有效
+        let isValid = false;
+        let validationError = null;
+
+        if (hasCookies) {
+            const projects = config.projects || {};
+            const projectIds = Object.keys(projects);
+
+            if (projectIds.length > 0) {
+                try {
+                    const testProject = projects[projectIds[0]];
+                    const { searchLogs } = await import('../services/slsClient.js');
+
+                    await searchLogs({
+                        projectName: testProject.projectName,
+                        logStoreName: testProject.logStoreName,
+                        query: '',
+                        from: Math.floor(Date.now() / 1000) - 3600,
+                        to: Math.floor(Date.now() / 1000),
+                        size: 1
+                    }, slsConfig);
+
+                    isValid = true;
+                } catch (error) {
+                    console.log('认证验证失败:', error.message);
+                    validationError = error.message;
+                    
+                    // 根据错误类型判断
+                    if (error.message.includes('401') || 
+                        error.message.includes('登录') || 
+                        error.message.includes('认证') ||
+                        error.message.includes('Unauthorized')) {
+                        isValid = false;
+                    }
+                }
+            } else {
+                // 没有配置项目，只能检查 cookies 是否存在
+                isValid = hasCookies;
+                validationError = '未配置项目，无法实际验证';
+            }
+        }
 
         res.json({
             success: true,
             data: {
                 hasCookies,
                 hasCsrfToken,
-                isExpired,
                 isValid,
-                region: slsConfig.region || 'cn-beijing'
+                region: slsConfig.region || 'cn-beijing',
+                createdAt,
+                cookieAgeDays,
+                maxAgeDays: MAX_AGE_DAYS,
+                validationError
             }
         });
 
@@ -478,7 +539,25 @@ router.get('/time-ranges', (req, res) => {
  */
 router.post('/test-ai', async (req, res) => {
     try {
-        const { provider, apiKey, baseUrl, model } = req.body;
+        let { provider, apiKey, baseUrl, model } = req.body;
+
+        console.log('[Test AI] Request body:', { provider, apiKey: apiKey?.substring(0, 15), baseUrl, model });
+
+        // 如果使用已保存的配置
+        if (apiKey === 'USE_SAVED_CONFIG') {
+            const config = await readConfig();
+            console.log('[Test AI] Config loaded:', config.aiConfig);
+            if (!config.aiConfig || !config.aiConfig.apiKey) {
+                return res.status(400).json({ success: false, error: '未找到已保存的 AI 配置' });
+            }
+            apiKey = config.aiConfig.apiKey;
+            // 如果请求中没有提供这些值，使用已保存的
+            provider = provider || config.aiConfig.provider;
+            baseUrl = baseUrl || config.aiConfig.baseUrl;
+            model = model || config.aiConfig.model;
+        }
+
+        console.log('[Test AI] Final values:', { provider, apiKey: apiKey?.substring(0, 15), baseUrl, model });
 
         if (!apiKey) {
             return res.status(400).json({ success: false, error: '请提供 API Key' });

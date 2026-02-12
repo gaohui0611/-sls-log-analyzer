@@ -3,8 +3,34 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SLS 日志智能分析系统</title>
+  <title>SLS 日志智能分析</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
   <style>
+    :root {
+      --apple-blue: #007AFF;
+      --apple-blue-hover: #0056CC;
+      --apple-green: #34C759;
+      --apple-red: #FF3B30;
+      --apple-orange: #FF9500;
+      --apple-purple: #AF52DE;
+      --apple-gray: #8E8E93;
+      --apple-gray-2: #AEAEB2;
+      --apple-gray-3: #C7C7CC;
+      --apple-gray-4: #D1D1D6;
+      --apple-gray-5: #E5E5EA;
+      --apple-gray-6: #F2F2F7;
+      --apple-bg: #F5F5F7;
+      --apple-text: #1D1D1F;
+      --apple-text-secondary: #86868B;
+      --apple-card: #FFFFFF;
+      --apple-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+      --apple-shadow-hover: 0 4px 20px rgba(0, 0, 0, 0.12);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
+    }
+
     * {
       margin: 0;
       padding: 0;
@@ -12,299 +38,542 @@
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+      background: var(--apple-bg);
       min-height: 100vh;
-      padding: 20px;
+      color: var(--apple-text);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
     }
 
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
-    .header {
-      text-align: center;
-      color: white;
-      margin-bottom: 30px;
-    }
-
-    .header h1 {
-      font-size: 2.5rem;
-      margin-bottom: 10px;
-      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-    }
-
-    .header p {
-      font-size: 1.1rem;
-      opacity: 0.9;
-    }
-
-    .main-card {
-      background: white;
-      border-radius: 20px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-      overflow: hidden;
-    }
-
-    .tabs {
+    /* 布局 */
+    .app-container {
       display: flex;
-      background: #f8f9fa;
-      border-bottom: 1px solid #dee2e6;
+      min-height: 100vh;
     }
 
-    .tab {
-      padding: 20px 30px;
-      cursor: pointer;
-      border: none;
-      background: none;
-      font-size: 1rem;
-      color: #6c757d;
-      transition: all 0.3s;
-      border-bottom: 3px solid transparent;
+    /* 侧边栏 */
+    .sidebar {
+      width: 260px;
+      background: var(--apple-card);
+      border-right: 1px solid var(--apple-gray-5);
+      padding: 24px 16px;
+      position: fixed;
+      height: 100vh;
+      overflow-y: auto;
+      z-index: 100;
     }
 
-    .tab:hover {
-      color: #667eea;
-      background: rgba(102, 126, 234, 0.1);
+    .sidebar-header {
+      padding: 0 8px 24px;
+      border-bottom: 1px solid var(--apple-gray-5);
+      margin-bottom: 24px;
     }
 
-    .tab.active {
-      color: #667eea;
-      border-bottom-color: #667eea;
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .sidebar-logo-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--apple-blue), #5856D6);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .sidebar-logo-text {
+      font-size: 17px;
       font-weight: 600;
+      color: var(--apple-text);
     }
 
-    .tab-content {
-      padding: 40px;
-      display: none;
+    .sidebar-logo-sub {
+      font-size: 12px;
+      color: var(--apple-text-secondary);
+      font-weight: 400;
     }
 
-    .tab-content.active {
-      display: block;
+    /* 导航 */
+    .nav-section {
+      margin-bottom: 32px;
     }
 
-    .form-group {
-      margin-bottom: 25px;
-    }
-
-    .form-group label {
-      display: block;
+    .nav-section-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--apple-gray);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 0 12px;
       margin-bottom: 8px;
-      font-weight: 600;
-      color: #333;
     }
 
-    .form-group input,
-    .form-group select,
-    .form-group textarea {
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: var(--apple-text);
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 2px;
+    }
+
+    .nav-item:hover {
+      background: var(--apple-gray-6);
+    }
+
+    .nav-item.active {
+      background: var(--apple-blue);
+      color: white;
+    }
+
+    .nav-item-icon {
+      font-size: 18px;
+      width: 24px;
+      text-align: center;
+    }
+
+    /* 主内容区 */
+    .main-content {
+      flex: 1;
+      margin-left: 260px;
+      padding: 32px 40px;
+      max-width: 1200px;
+    }
+
+    /* 页面标题 */
+    .page-header {
+      margin-bottom: 32px;
+    }
+
+    .page-title {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--apple-text);
+      letter-spacing: -0.5px;
+    }
+
+    .page-subtitle {
+      font-size: 15px;
+      color: var(--apple-text-secondary);
+      margin-top: 4px;
+    }
+
+    /* 卡片 */
+    .card {
+      background: var(--apple-card);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: var(--apple-shadow);
+      transition: box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+      box-shadow: var(--apple-shadow-hover);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--apple-text);
+    }
+
+    /* 表单 */
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--apple-text);
+      margin-bottom: 8px;
+    }
+
+    .form-input,
+    .form-select,
+    .form-textarea {
       width: 100%;
       padding: 12px 16px;
-      border: 2px solid #e9ecef;
-      border-radius: 10px;
-      font-size: 1rem;
-      transition: all 0.3s;
+      border: 1px solid var(--apple-gray-4);
+      border-radius: var(--radius-md);
+      font-size: 15px;
+      color: var(--apple-text);
+      background: var(--apple-card);
+      transition: all 0.2s ease;
+      font-family: inherit;
     }
 
-    .form-group input:focus,
-    .form-group select:focus,
-    .form-group textarea:focus {
+    .form-input:focus,
+    .form-select:focus,
+    .form-textarea:focus {
       outline: none;
-      border-color: #667eea;
-      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      border-color: var(--apple-blue);
+      box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15);
+    }
+
+    .form-input::placeholder {
+      color: var(--apple-gray-2);
     }
 
     .form-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 20px;
+      gap: 16px;
     }
 
+    .form-hint {
+      font-size: 12px;
+      color: var(--apple-text-secondary);
+      margin-top: 6px;
+    }
+
+    /* 按钮 */
     .btn {
-      padding: 14px 32px;
-      border: none;
-      border-radius: 10px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s;
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 8px;
+      padding: 12px 24px;
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: inherit;
     }
 
     .btn-primary {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: var(--apple-blue);
       color: white;
     }
 
     .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
-    }
-
-    .btn-primary:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      transform: none;
+      background: var(--apple-blue-hover);
+      transform: translateY(-1px);
     }
 
     .btn-secondary {
-      background: #6c757d;
-      color: white;
+      background: var(--apple-gray-6);
+      color: var(--apple-text);
     }
 
     .btn-secondary:hover {
-      background: #5a6268;
+      background: var(--apple-gray-5);
     }
 
     .btn-success {
-      background: #28a745;
+      background: var(--apple-green);
       color: white;
     }
 
     .btn-danger {
-      background: #dc3545;
+      background: var(--apple-red);
       color: white;
     }
 
     .btn-sm {
       padding: 8px 16px;
-      font-size: 0.875rem;
+      font-size: 13px;
     }
 
-    .card {
-      background: #f8f9fa;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 20px;
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
     }
 
-    .card h3 {
-      margin-bottom: 15px;
-      color: #333;
-      display: flex;
+    /* 状态标签 */
+    .status-badge {
+      display: inline-flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
+      padding: 10px 16px;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      font-weight: 500;
     }
 
-    .auth-status {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-      padding: 15px 20px;
-      border-radius: 10px;
-      margin-bottom: 20px;
+    .status-badge.valid {
+      background: rgba(52, 199, 89, 0.12);
+      color: var(--apple-green);
     }
 
-    .auth-status.valid {
-      background: #d4edda;
-      color: #155724;
+    .status-badge.invalid {
+      background: rgba(255, 59, 48, 0.12);
+      color: var(--apple-red);
     }
 
-    .auth-status.invalid {
-      background: #f8d7da;
-      color: #721c24;
+    .status-badge-icon {
+      font-size: 16px;
     }
 
-    .auth-status .icon {
-      font-size: 1.5rem;
+    /* 认证详情 */
+    .auth-detail {
+      margin-top: 16px;
+      padding: 16px;
+      background: var(--apple-gray-6);
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      line-height: 1.8;
     }
 
-    .project-list {
+    .auth-detail p {
+      margin: 4px 0;
+      color: var(--apple-text);
+    }
+
+    /* 项目列表 */
+    .item-list {
       display: grid;
-      gap: 15px;
+      gap: 12px;
     }
 
-    .project-item {
+    .item-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 15px 20px;
-      background: white;
-      border: 2px solid #e9ecef;
-      border-radius: 10px;
-      transition: all 0.3s;
+      padding: 16px 20px;
+      background: var(--apple-gray-6);
+      border-radius: var(--radius-md);
+      transition: all 0.2s ease;
     }
 
-    .project-item:hover {
-      border-color: #667eea;
+    .item-row:hover {
+      background: var(--apple-gray-5);
     }
 
-    .project-item.selected {
-      border-color: #667eea;
-      background: rgba(102, 126, 234, 0.05);
+    .item-info h4 {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--apple-text);
+      margin-bottom: 4px;
     }
 
-    .project-item .info h4 {
-      margin-bottom: 5px;
-      color: #333;
+    .item-info p {
+      font-size: 13px;
+      color: var(--apple-text-secondary);
     }
 
-    .project-item .info p {
-      color: #6c757d;
-      font-size: 0.9rem;
-    }
-
-    .project-item .actions {
+    .item-actions {
       display: flex;
-      gap: 10px;
+      gap: 8px;
     }
 
-    .report-list {
-      display: grid;
-      gap: 15px;
-    }
-
+    /* 报告卡片 */
     .report-item {
-      background: white;
-      border: 2px solid #e9ecef;
-      border-radius: 10px;
-      padding: 20px;
-      transition: all 0.3s;
+      background: var(--apple-card);
+      border-radius: var(--radius-lg);
+      margin-bottom: 16px;
+      box-shadow: var(--apple-shadow);
+      transition: all 0.2s ease;
+      border: 1px solid var(--apple-gray-5);
+      overflow: hidden;
     }
 
     .report-item:hover {
-      border-color: #667eea;
-      transform: translateX(5px);
+      box-shadow: var(--apple-shadow-hover);
+      border-color: var(--apple-blue);
+      transform: translateY(-2px);
     }
 
     .report-item .header {
       display: flex;
       justify-content: space-between;
-      align-items: start;
-      margin-bottom: 10px;
+      align-items: flex-start;
+      padding: 20px 24px;
+      background: linear-gradient(135deg, rgba(0, 122, 255, 0.03), rgba(88, 86, 214, 0.03));
+      border-bottom: 1px solid var(--apple-gray-5);
     }
 
     .report-item .title {
+      font-size: 18px;
       font-weight: 600;
-      color: #333;
-      margin-bottom: 5px;
+      color: var(--apple-text);
+      margin-bottom: 6px;
     }
 
     .report-item .meta {
-      color: #6c757d;
-      font-size: 0.9rem;
+      font-size: 13px;
+      color: var(--apple-text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .report-item .actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .report-params {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      padding: 20px 24px;
+      background: var(--apple-card);
+    }
+
+    .param-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .param-label {
+      font-size: 12px;
+      color: var(--apple-text-secondary);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .param-value {
+      font-size: 14px;
+      color: var(--apple-text);
+      font-weight: 500;
+    }
+
+    .param-value.keyword {
+      display: inline-block;
+      background: linear-gradient(135deg, var(--apple-blue), #5856D6);
+      color: white;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+    }
+
+    .param-value.time {
+      display: inline-block;
+      background: rgba(0, 122, 255, 0.1);
+      color: var(--apple-blue);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-weight: 600;
+    }
+
+    .param-value.detail {
+      font-size: 13px;
+      color: var(--apple-text-secondary);
+      font-family: 'SF Mono', Monaco, monospace;
     }
 
     .report-item .stats {
       display: flex;
-      gap: 20px;
-      margin-top: 10px;
+      gap: 0;
+      padding: 16px 24px;
+      background: var(--apple-gray-6);
+      border-top: 1px solid var(--apple-gray-5);
     }
 
     .report-item .stat {
+      flex: 1;
       display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 5px;
-      color: #6c757d;
-      font-size: 0.9rem;
+      padding: 8px 12px;
+      border-right: 1px solid var(--apple-gray-4);
     }
 
+    .report-item .stat:last-child {
+      border-right: none;
+    }
+
+    .report-item .stat strong {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--apple-text);
+      margin-bottom: 4px;
+    }
+
+    .report-item .stat::before {
+      content: attr(data-label);
+      font-size: 11px;
+      color: var(--apple-text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    /* 分页 */
+    .pagination {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 24px;
+      margin-top: 24px;
+      background: var(--apple-card);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--apple-shadow);
+    }
+
+    .pagination-info {
+      font-size: 14px;
+      color: var(--apple-text-secondary);
+      font-weight: 500;
+    }
+
+    .pagination-buttons {
+      display: flex;
+      gap: 6px;
+    }
+
+    .page-btn {
+      min-width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      background: var(--apple-gray-6);
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--apple-text);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .page-btn:hover {
+      background: var(--apple-blue);
+      color: white;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+    }
+
+    .page-btn.active {
+      background: linear-gradient(135deg, var(--apple-blue), #5856D6);
+      color: white;
+      box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+    }
+
+    /* 加载状态 */
     .loading {
       display: none;
       text-align: center;
-      padding: 40px;
+      padding: 60px;
     }
 
     .loading.active {
@@ -312,439 +581,702 @@
     }
 
     .spinner {
-      border: 4px solid #f3f3f3;
-      border-top: 4px solid #667eea;
-      border-radius: 50%;
       width: 40px;
       height: 40px;
-      animation: spin 1s linear infinite;
-      margin: 0 auto 20px;
+      border: 3px solid var(--apple-gray-5);
+      border-top-color: var(--apple-blue);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px;
     }
 
     @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+      to { transform: rotate(360deg); }
     }
 
+    /* 提示框 */
     .alert {
-      padding: 15px 20px;
-      border-radius: 10px;
-      margin-bottom: 20px;
+      padding: 14px 18px;
+      border-radius: var(--radius-md);
+      margin-bottom: 16px;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
 
     .alert-success {
-      background: #d4edda;
-      color: #155724;
-      border: 1px solid #c3e6cb;
+      background: rgba(52, 199, 89, 0.12);
+      color: var(--apple-green);
     }
 
     .alert-error {
-      background: #f8d7da;
-      color: #721c24;
-      border: 1px solid #f5c6cb;
+      background: rgba(255, 59, 48, 0.12);
+      color: var(--apple-red);
     }
 
     .alert-info {
-      background: #d1ecf1;
-      color: #0c5460;
-      border: 1px solid #bee5eb;
+      background: rgba(0, 122, 255, 0.12);
+      color: var(--apple-blue);
     }
 
+    /* 空状态 */
     .empty-state {
       text-align: center;
       padding: 60px 20px;
-      color: #6c757d;
     }
 
-    .empty-state .icon {
-      font-size: 4rem;
-      margin-bottom: 20px;
+    .empty-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.5;
     }
 
+    .empty-text {
+      font-size: 15px;
+      color: var(--apple-text-secondary);
+    }
+
+    /* 标签 */
+    .tag {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .tag-error { background: rgba(255, 59, 48, 0.12); color: var(--apple-red); }
+    .tag-warning { background: rgba(255, 149, 0, 0.12); color: var(--apple-orange); }
+    .tag-info { background: rgba(0, 122, 255, 0.12); color: var(--apple-blue); }
+
+    /* Markdown 内容 */
     .markdown-content {
-      line-height: 1.8;
-      color: #333;
+      line-height: 1.7;
+      color: var(--apple-text);
     }
 
     .markdown-content h1,
     .markdown-content h2,
     .markdown-content h3 {
-      margin-top: 20px;
-      margin-bottom: 10px;
+      margin: 24px 0 12px;
+      color: var(--apple-text);
     }
 
     .markdown-content code {
-      background: #f4f4f4;
+      background: var(--apple-gray-6);
       padding: 2px 6px;
       border-radius: 4px;
-      font-family: 'Monaco', 'Menlo', monospace;
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 13px;
     }
 
     .markdown-content pre {
-      background: #2d2d2d;
-      color: #ccc;
-      padding: 15px;
-      border-radius: 8px;
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 16px;
+      border-radius: var(--radius-md);
       overflow-x: auto;
+      margin: 16px 0;
     }
 
     .markdown-content pre code {
       background: none;
       padding: 0;
+      color: inherit;
     }
 
+    /* 分析结果 */
+    .analysis-result {
+      margin-top: 24px;
+    }
+
+    .result-section {
+      background: var(--apple-gray-6);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+
+    .result-section-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--apple-blue);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px 32px;
+    }
+
+    .result-item {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .result-label {
+      font-size: 13px;
+      color: var(--apple-text-secondary);
+      min-width: 80px;
+    }
+
+    .result-value {
+      font-size: 14px;
+      color: var(--apple-text);
+    }
+
+    .result-value.highlight {
+      background: var(--apple-blue);
+      color: white;
+      padding: 3px 10px;
+      border-radius: 6px;
+      font-weight: 500;
+    }
+
+    /* 模态框 */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: var(--apple-card);
+      border-radius: var(--radius-xl);
+      padding: 28px;
+      max-width: 480px;
+      width: 90%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--apple-text);
+      margin-bottom: 20px;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      margin-top: 24px;
+    }
+
+    /* Tab 内容 */
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 快捷操作 */
+    .quick-actions {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .btn-refresh {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 20px;
+      background: linear-gradient(135deg, var(--apple-blue), #5856D6);
+      color: white;
+      border: none;
+      border-radius: var(--radius-lg);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 12px rgba(0, 122, 255, 0.3);
+    }
+
+    .btn-refresh:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(0, 122, 255, 0.4);
+    }
+
+    .btn-refresh:active {
+      transform: translateY(0);
+    }
+
+    .btn-refresh-icon {
+      font-size: 16px;
+      transition: transform 0.3s ease;
+    }
+
+    .btn-refresh:hover .btn-refresh-icon {
+      transform: rotate(180deg);
+    }
+
+    /* 报告加载状态 */
+    .report-loading {
+      display: none;
+      text-align: center;
+      padding: 60px 20px;
+      background: var(--apple-card);
+      border-radius: var(--radius-lg);
+      margin-bottom: 20px;
+    }
+
+    .report-loading.active {
+      display: block;
+    }
+
+    .report-loading-spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid var(--apple-gray-5);
+      border-top-color: var(--apple-blue);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    .report-loading p {
+      color: var(--apple-text-secondary);
+      font-size: 15px;
+      font-weight: 500;
+    }
+
+    .btn-refresh.loading {
+      pointer-events: none;
+      opacity: 0.7;
+    }
+
+    .btn-refresh.loading .btn-refresh-icon {
+      animation: spin 0.8s linear infinite;
+    }
+
+    /* 日志条目 */
     .log-entry {
-      background: #f8f9fa;
-      border-left: 4px solid #dee2e6;
-      padding: 15px;
-      margin-bottom: 10px;
-      border-radius: 0 8px 8px 0;
+      background: var(--apple-gray-6);
+      border-left: 3px solid var(--apple-gray-3);
+      padding: 12px 16px;
+      border-radius: 0 var(--radius-md) var(--radius-md) 0;
+      margin-bottom: 8px;
     }
 
-    .log-entry.error {
-      border-left-color: #dc3545;
+    .log-entry.error { border-left-color: var(--apple-red); }
+    .log-entry.warning { border-left-color: var(--apple-orange); }
+
+    .log-time {
+      font-size: 12px;
+      color: var(--apple-text-secondary);
+      margin-bottom: 4px;
     }
 
-    .log-entry.warning {
-      border-left-color: #ffc107;
-    }
-
-    .log-entry .time {
-      color: #6c757d;
-      font-size: 0.9rem;
-      margin-bottom: 5px;
-    }
-
-    .log-entry .message {
-      color: #333;
+    .log-message {
+      font-size: 13px;
+      color: var(--apple-text);
       white-space: pre-wrap;
       word-break: break-all;
     }
 
-    .tag {
-      display: inline-block;
-      padding: 4px 10px;
-      border-radius: 20px;
-      font-size: 0.85rem;
-      font-weight: 500;
-    }
-
-    .tag-error {
-      background: #f8d7da;
-      color: #721c24;
-    }
-
-    .tag-warning {
-      background: #fff3cd;
-      color: #856404;
-    }
-
-    .tag-info {
-      background: #d1ecf1;
-      color: #0c5460;
-    }
-
-    .quick-actions {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-
-    .quick-actions .btn {
-      padding: 10px 20px;
+    /* 响应式 */
+    @media (max-width: 1024px) {
+      .sidebar {
+        width: 200px;
+      }
+      .main-content {
+        margin-left: 200px;
+        padding: 24px;
+      }
+      .report-params {
+        grid-template-columns: 1fr 1fr;
+      }
     }
 
     @media (max-width: 768px) {
+      .sidebar {
+        display: none;
+      }
+      .main-content {
+        margin-left: 0;
+        padding: 20px;
+      }
       .form-row {
         grid-template-columns: 1fr;
       }
-
-      .project-item,
-      .report-item {
-        flex-direction: column;
-        align-items: start;
+      .result-grid {
+        grid-template-columns: 1fr;
       }
-
-      .project-item .actions,
-      .report-item .actions {
-        margin-top: 10px;
-        width: 100%;
+      .report-params {
+        grid-template-columns: 1fr;
+      }
+      .report-item .stats {
+        flex-wrap: wrap;
+        gap: 0;
+      }
+      .report-item .stat {
+        flex: 1 1 50%;
+        border-bottom: 1px solid var(--apple-gray-4);
+      }
+      .report-item .stat:nth-child(odd) {
+        border-right: 1px solid var(--apple-gray-4);
+      }
+      .report-item .stat:nth-child(-n+2) {
+        border-top: none;
+      }
+      .report-item .stat:nth-child(n+3) {
+        border-bottom: none;
+      }
+      .pagination {
+        flex-direction: column;
+        gap: 16px;
+      }
+      .pagination-buttons {
+        flex-wrap: wrap;
+        justify-content: center;
       }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="header">
-      <h1>🤖 SLS 日志智能分析系统</h1>
-      <p>配置项目 · 选择时间范围 · AI 自动生成分析报告</p>
-    </div>
-
-    <div class="main-card">
-      <div class="tabs">
-        <button class="tab active" data-tab="settings">⚙️ 系统设置</button>
-        <button class="tab" data-tab="projects">📁 项目管理</button>
-        <button class="tab" data-tab="ai">🧠 AI 配置</button>
-        <button class="tab" data-tab="analyze">🔍 日志分析</button>
-        <button class="tab" data-tab="reports">📊 分析报告</button>
+  <div class="app-container">
+    <!-- 侧边栏 -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <div class="sidebar-logo-icon">📊</div>
+          <div>
+            <div class="sidebar-logo-text">日志分析</div>
+            <div class="sidebar-logo-sub">SLS 智能分析系统</div>
+          </div>
+        </div>
       </div>
 
-      <!-- 系统设置页面 -->
+      <nav class="nav-section">
+        <div class="nav-section-title">功能</div>
+        <div class="nav-item active" data-tab="settings">
+          <span class="nav-item-icon">⚙️</span>
+          <span>系统设置</span>
+        </div>
+        <div class="nav-item" data-tab="projects">
+          <span class="nav-item-icon">📁</span>
+          <span>项目管理</span>
+        </div>
+        <div class="nav-item" data-tab="ai">
+          <span class="nav-item-icon">🧠</span>
+          <span>AI 配置</span>
+        </div>
+        <div class="nav-item" data-tab="analyze">
+          <span class="nav-item-icon">🔍</span>
+          <span>日志分析</span>
+        </div>
+        <div class="nav-item" data-tab="reports">
+          <span class="nav-item-icon">📄</span>
+          <span>分析报告</span>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- 主内容区 -->
+    <main class="main-content">
+      <!-- 系统设置 -->
       <div class="tab-content active" id="settings-tab">
+        <div class="page-header">
+          <h1 class="page-title">系统设置</h1>
+          <p class="page-subtitle">配置阿里云 SLS 认证信息</p>
+        </div>
+
         <div class="card">
-          <h3>🔐 认证状态</h3>
-          <div class="auth-status" id="authStatus">
-            <span class="icon">⏳</span>
+          <div class="card-header">
+            <h3 class="card-title">认证状态</h3>
+          </div>
+          <div class="status-badge invalid" id="authStatus">
+            <span class="status-badge-icon">⏳</span>
             <span>检查中...</span>
           </div>
-          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <button class="btn btn-success" id="autoSyncAuthBtn">
-              <span>🚀</span> 一键自动同步
-            </button>
-            <button class="btn btn-primary" id="syncAuthBtn">
-              <span>🔄</span> 验证认证状态
-            </button>
+          <div id="authDetail" class="auth-detail" style="display: none;"></div>
+          <div style="display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap;">
+            <button class="btn btn-success" id="autoSyncAuthBtn">🚀 一键自动同步</button>
+            <button class="btn btn-primary" id="syncAuthBtn">🔄 验证状态</button>
           </div>
-          <p style="margin-top: 15px; color: #6c757d; font-size: 0.9rem;">
-            💡 点击"一键自动同步"会自动打开浏览器窗口，请在窗口中完成阿里云登录。
+          <p class="form-hint" style="margin-top: 12px;">
+            点击"一键自动同步"会自动打开浏览器窗口，请在窗口中完成阿里云登录。<br>
+            认证有效期 30 天，建议在过期前重新同步。
           </p>
         </div>
 
         <div class="card">
-          <h3>📖 备用方式：cURL</h3>
-          <p style="color: #6c757d; margin-bottom: 15px;">如果自动同步不工作，可以使用 cURL 方式：</p>
-          <ol style="color: #6c757d; line-height: 2;">
+          <div class="card-header">
+            <h3 class="card-title">备用方式：cURL</h3>
+          </div>
+          <p style="color: var(--apple-text-secondary); font-size: 14px; margin-bottom: 16px;">
+            如果自动同步不工作，可以使用 cURL 方式：
+          </p>
+          <ol style="color: var(--apple-text-secondary); font-size: 13px; line-height: 2; padding-left: 20px;">
             <li>打开浏览器开发者工具 (F12)</li>
-            <li>访问 <a href="https://sls.console.aliyun.com" target="_blank">https://sls.console.aliyun.com</a></li>
+            <li>访问 <a href="https://sls.console.aliyun.com" target="_blank" style="color: var(--apple-blue);">阿里云 SLS 控制台</a></li>
             <li>执行一次日志搜索操作</li>
-            <li>在 Network 面板找到 <code>getLogs.json</code> 请求</li>
+            <li>在 Network 面板找到 <code style="background: var(--apple-gray-6); padding: 2px 6px; border-radius: 4px;">getLogs.json</code> 请求</li>
             <li>右键 → Copy → Copy as cURL</li>
             <li>将 cURL 命令粘贴到下方</li>
           </ol>
-          <textarea id="curlInput" rows="5" style="width: 100%; margin-top: 15px; padding: 10px; border: 2px solid #e9ecef; border-radius: 10px;" placeholder="粘贴 curl 命令..."></textarea>
-          <button class="btn btn-success" style="margin-top: 10px;" id="parseCurlBtn">
-            <span>✅</span> 解析并保存
-          </button>
+          <textarea id="curlInput" class="form-textarea" rows="4" placeholder="粘贴 curl 命令..." style="margin-top: 16px;"></textarea>
+          <button class="btn btn-success" style="margin-top: 12px;" id="parseCurlBtn">✅ 解析并保存</button>
         </div>
       </div>
 
-      <!-- 项目管理页面 -->
+      <!-- 项目管理 -->
       <div class="tab-content" id="projects-tab">
+        <div class="page-header">
+          <h1 class="page-title">项目管理</h1>
+          <p class="page-subtitle">配置需要分析的日志项目</p>
+        </div>
+
         <div class="card">
-          <h3>➕ 添加新项目</h3>
+          <div class="card-header">
+            <h3 class="card-title">添加新项目</h3>
+          </div>
           <div class="form-row">
             <div class="form-group">
-              <label>项目名称</label>
-              <input type="text" id="newProjectName" placeholder="项目显示名称">
+              <label class="form-label">项目名称</label>
+              <input type="text" class="form-input" id="newProjectName" placeholder="项目显示名称">
             </div>
             <div class="form-group">
-              <label>阿里云 Project Name</label>
-              <input type="text" id="newSlsProject" placeholder="SLS 项目名">
+              <label class="form-label">SLS Project Name</label>
+              <input type="text" class="form-input" id="newSlsProject" placeholder="阿里云项目名">
             </div>
           </div>
           <div class="form-group">
-            <label>LogStore 名称</label>
-            <input type="text" id="newLogStore" placeholder="日志库名称">
+            <label class="form-label">LogStore 名称</label>
+            <input type="text" class="form-input" id="newLogStore" placeholder="日志库名称">
           </div>
-          <button class="btn btn-primary" id="addProjectBtn">
-            <span>➕</span> 添加项目
-          </button>
+          <button class="btn btn-primary" id="addProjectBtn">➕ 添加项目</button>
         </div>
 
         <div class="card">
-          <h3>📁 已配置项目</h3>
-          <div class="project-list" id="projectList"></div>
+          <div class="card-header">
+            <h3 class="card-title">已配置项目</h3>
+          </div>
+          <div class="item-list" id="projectList"></div>
         </div>
       </div>
 
-      <!-- 编辑项目模态框 -->
-      <div id="editProjectModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
-        <div style="background: white; border-radius: 20px; padding: 30px; max-width: 500px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
-          <h3 style="margin: 0 0 20px 0; color: #333;">✏️ 编辑项目</h3>
-          <input type="hidden" id="editProjectId">
-          <div class="form-group">
-            <label>项目名称</label>
-            <input type="text" id="editProjectName" placeholder="项目显示名称">
+      <!-- AI 配置 -->
+      <div class="tab-content" id="ai-tab">
+        <div class="page-header">
+          <h1 class="page-title">AI 配置</h1>
+          <p class="page-subtitle">配置 AI 模型用于智能分析</p>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">当前配置</h3>
           </div>
-          <div class="form-group">
-            <label>阿里云 Project Name</label>
-            <input type="text" id="editSlsProject" placeholder="SLS 项目名">
+          <div id="aiConfigDisplay">
+            <span style="color: var(--apple-text-secondary);">⏳ 检查中...</span>
           </div>
-          <div class="form-group">
-            <label>LogStore 名称</label>
-            <input type="text" id="editLogStore" placeholder="日志库名称">
-          </div>
-          <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
-            <button class="btn btn-secondary" onclick="closeEditProjectModal()">取消</button>
-            <button class="btn btn-primary" onclick="saveEditProject()">保存</button>
+          <div style="margin-top: 16px;">
+            <button class="btn btn-primary btn-sm" id="editAiConfigBtn">✏️ 编辑配置</button>
+            <button class="btn btn-success btn-sm" id="testAiConfigQuick">🧪 测试连接</button>
           </div>
         </div>
-      </div>
 
-      <!-- 编辑AI配置模态框 -->
-      <div id="editAiModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
-        <div style="background: white; border-radius: 20px; padding: 30px; max-width: 500px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
-          <h3 style="margin: 0 0 20px 0; color: #333;">✏️ 编辑 AI 配置</h3>
+        <div class="card">
           <div class="form-group">
-            <label>AI 提供商</label>
-            <select id="editAiProvider">
+            <label class="form-label">AI 提供商</label>
+            <select class="form-select" id="aiProvider">
               <option value="anthropic">Anthropic (Claude)</option>
               <option value="openai">OpenAI (GPT)</option>
               <option value="openai-compatible">OpenAI 兼容 (智谱/通义等)</option>
             </select>
           </div>
           <div class="form-group">
-            <label>API Key</label>
-            <input type="password" id="editAiApiKey" placeholder="sk-ant-xxx 或 sk-xxx">
+            <label class="form-label">API Key</label>
+            <input type="password" class="form-input" id="aiApiKey" placeholder="sk-ant-xxx 或 sk-xxx">
           </div>
-          <div class="form-group" id="editBaseUrlGroup" style="display:none;">
-            <label>API Base URL</label>
-            <input type="text" id="editAiBaseUrl" placeholder="https://api.openai.com/v1">
-            <small style="color: #6c757d;">对于 OpenAI 兼容 API，请填写完整的 Base URL</small>
+          <div class="form-group" id="baseUrlGroup" style="display:none;">
+            <label class="form-label">API Base URL</label>
+            <input type="text" class="form-input" id="aiBaseUrl" placeholder="https://api.openai.com/v1">
+            <p class="form-hint">对于 OpenAI 兼容 API，请填写完整的 Base URL</p>
           </div>
           <div class="form-group">
-            <label>模型</label>
-            <input type="text" id="editAiModel" placeholder="claude-3-5-sonnet-20241022 或 gpt-4">
+            <label class="form-label">模型</label>
+            <input type="text" class="form-input" id="aiModel" placeholder="claude-3-5-sonnet-20241022">
           </div>
-          <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
-            <button class="btn btn-secondary" onclick="closeEditAiModal()">取消</button>
-            <button class="btn btn-primary" onclick="saveEditAiConfig()">保存</button>
+          <div style="display: flex; gap: 12px;">
+            <button class="btn btn-success" id="saveAiConfig">💾 保存配置</button>
+            <button class="btn btn-primary" id="testAiConfig">🧪 测试连接</button>
           </div>
+          <div id="testResult" style="margin-top: 16px; display: none;"></div>
         </div>
-      </div>
 
-      <!-- AI 配置页面 -->
-      <div class="tab-content" id="ai-tab">
-        <div class="card" id="aiConfigStatus">
-          <h3>🤖 当前 AI 配置</h3>
-          <div id="aiConfigDisplay" style="color: #6c757d;">
-            <span>⏳ 检查中...</span>
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">配置说明</h3>
           </div>
-        </div>
-
-        <div class="form-group">
-          <label>AI 提供商</label>
-          <select id="aiProvider">
-            <option value="anthropic">Anthropic (Claude)</option>
-            <option value="openai">OpenAI (GPT)</option>
-            <option value="openai-compatible">OpenAI 兼容 (智谱/通义等)</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label>API Key</label>
-          <input type="password" id="aiApiKey" placeholder="sk-ant-xxx 或 sk-xxx">
-        </div>
-
-        <div class="form-group" id="baseUrlGroup" style="display:none;">
-          <label>API Base URL</label>
-          <input type="text" id="aiBaseUrl" placeholder="https://api.openai.com/v1">
-          <small style="color: #6c757d;">对于 OpenAI 兼容 API，请填写完整的 Base URL</small>
-        </div>
-
-        <div class="form-group">
-          <label>模型</label>
-          <input type="text" id="aiModel" placeholder="claude-3-5-sonnet-20241022 或 gpt-4">
-        </div>
-
-        <div style="display: flex; gap: 10px;">
-          <button class="btn btn-success" id="saveAiConfig">
-            <span>💾</span> 保存配置
-          </button>
-          <button class="btn btn-primary" id="testAiConfig">
-            <span>🧪</span> 测试连接
-          </button>
-        </div>
-
-        <div id="testResult" style="margin-top: 15px; display: none;"></div>
-
-        <div class="card" style="margin-top: 20px;">
-          <h3>📖 配置说明</h3>
-          <div style="color: #6c757d; line-height: 1.8;">
-            <p><strong>Anthropic Claude:</strong></p>
-            <p>API Key: sk-ant-xxx</p>
-            <p>模型示例: claude-3-5-sonnet-20241022, claude-3-opus-20240229</p>
-            <br>
-            <p><strong>OpenAI:</strong></p>
-            <p>API Key: sk-xxx</p>
-            <p>模型示例: gpt-4, gpt-4-turbo, gpt-3.5-turbo</p>
-            <br>
-            <p><strong>OpenAI 兼容 (智谱 AI):</strong></p>
-            <p>API Key: 您的智谱 API Key</p>
-            <p>Base URL: https://open.bigmodel.cn/api/paas/v4</p>
-            <p>模型: glm-4-plus, glm-4-0520, glm-4-air</p>
-            <br>
-            <p><strong>OpenAI 兼容 (通义千问):</strong></p>
-            <p>API Key: sk-xxx</p>
-            <p>Base URL: https://dashscope.aliyuncs.com/compatible-mode/v1</p>
-            <p>模型: qwen-plus, qwen-turbo</p>
+          <div style="color: var(--apple-text-secondary); font-size: 13px; line-height: 1.8;">
+            <p><strong style="color: var(--apple-text);">Anthropic Claude:</strong> API Key: sk-ant-xxx | 模型: claude-3-5-sonnet-20241022</p>
+            <p><strong style="color: var(--apple-text);">OpenAI:</strong> API Key: sk-xxx | 模型: gpt-4, gpt-3.5-turbo</p>
+            <p><strong style="color: var(--apple-text);">通义千问:</strong> Base URL: https://dashscope.aliyuncs.com/compatible-mode/v1 | 模型: qwen-plus</p>
           </div>
         </div>
       </div>
 
-      <!-- 日志分析页面 -->
+      <!-- 日志分析 -->
       <div class="tab-content" id="analyze-tab">
-        <div class="form-row">
-          <div class="form-group">
-            <label>选择项目</label>
-            <select id="projectSelect">
-              <option value="">-- 请选择项目 --</option>
-            </select>
+        <div class="page-header">
+          <h1 class="page-title">日志分析</h1>
+          <p class="page-subtitle">选择项目和时间范围，AI 将自动分析日志</p>
+        </div>
+
+        <div class="card">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">选择项目</label>
+              <select class="form-select" id="projectSelect">
+                <option value="">-- 请选择项目 --</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">时间范围</label>
+              <select class="form-select" id="timeRangeSelect">
+                <option value="thisWeek">本周</option>
+                <option value="lastWeek">上周</option>
+                <option value="today">今天</option>
+                <option value="yesterday">昨天</option>
+                <option value="thisMonth">本月</option>
+                <option value="lastMonth">上月</option>
+                <option value="last7days">最近7天</option>
+                <option value="last30days">最近30天</option>
+              </select>
+            </div>
           </div>
           <div class="form-group">
-            <label>时间范围</label>
-            <select id="timeRangeSelect">
-              <option value="thisWeek">本周</option>
-              <option value="lastWeek">上周</option>
-              <option value="today">今天</option>
-              <option value="yesterday">昨天</option>
-              <option value="thisMonth">本月</option>
-              <option value="lastMonth">上月</option>
-              <option value="last7days">最近7天</option>
-              <option value="last30days">最近30天</option>
+            <label class="form-label">查询关键词 (可选)</label>
+            <input type="text" class="form-input" id="queryInput" placeholder="例如: TID_xxxxx, ERROR, userId 等">
+          </div>
+          <div class="form-group">
+            <label class="form-label">返回数量</label>
+            <select class="form-select" id="sizeSelect">
+              <option value="50">50 条</option>
+              <option value="100" selected>100 条</option>
+              <option value="200">200 条</option>
+              <option value="500">500 条</option>
             </select>
           </div>
+          <button class="btn btn-primary" id="analyzeBtn">🚀 开始分析</button>
         </div>
-
-        <div class="form-group">
-          <label>查询关键词 (可选)</label>
-          <input type="text" id="queryInput" placeholder="例如: TID_xxxxx, ERROR, userId 等">
-        </div>
-
-        <div class="form-group">
-          <label>返回数量</label>
-          <select id="sizeSelect">
-            <option value="50">50 条</option>
-            <option value="100" selected>100 条</option>
-            <option value="200">200 条</option>
-            <option value="500">500 条</option>
-          </select>
-        </div>
-
-        <button class="btn btn-primary" id="analyzeBtn">
-          <span>🚀</span> 开始分析
-        </button>
 
         <div class="loading" id="analyzeLoading">
           <div class="spinner"></div>
-          <p>正在分析日志，请稍候...</p>
+          <p style="color: var(--apple-text-secondary);">正在分析日志，请稍候...</p>
         </div>
 
         <div id="analyzeResult"></div>
       </div>
 
-      <!-- 分析报告页面 -->
+      <!-- 分析报告 -->
       <div class="tab-content" id="reports-tab">
+        <div class="page-header">
+          <h1 class="page-title">分析报告</h1>
+          <p class="page-subtitle">查看历史分析报告</p>
+        </div>
+
         <div class="quick-actions">
-          <button class="btn btn-secondary btn-sm" id="refreshReports">
-            <span>🔄</span> 刷新
+          <button class="btn-refresh" id="refreshReports">
+            <span class="btn-refresh-icon">🔄</span>
+            <span>刷新列表</span>
           </button>
         </div>
-        <div class="report-list" id="reportList"></div>
+
+        <div id="reportLoading" class="report-loading">
+          <div class="report-loading-spinner"></div>
+          <p>正在加载报告列表...</p>
+        </div>
+
+        <div id="reportList"></div>
+        <div class="pagination" id="reportPagination" style="display: none;"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 编辑项目模态框 -->
+  <div class="modal-overlay" id="editProjectModal">
+    <div class="modal-content">
+      <h3 class="modal-title">编辑项目</h3>
+      <input type="hidden" id="editProjectId">
+      <div class="form-group">
+        <label class="form-label">项目名称</label>
+        <input type="text" class="form-input" id="editProjectName">
+      </div>
+      <div class="form-group">
+        <label class="form-label">SLS Project Name</label>
+        <input type="text" class="form-input" id="editSlsProject">
+      </div>
+      <div class="form-group">
+        <label class="form-label">LogStore 名称</label>
+        <input type="text" class="form-input" id="editLogStore">
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeEditProjectModal()">取消</button>
+        <button class="btn btn-primary" onclick="saveEditProject()">保存</button>
       </div>
     </div>
   </div>
 
-  <script src="/app.js"></script>
+  <!-- 编辑 AI 配置模态框 -->
+  <div class="modal-overlay" id="editAiModal">
+    <div class="modal-content">
+      <h3 class="modal-title">编辑 AI 配置</h3>
+      <div class="form-group">
+        <label class="form-label">AI 提供商</label>
+        <select class="form-select" id="editAiProvider">
+          <option value="anthropic">Anthropic (Claude)</option>
+          <option value="openai">OpenAI (GPT)</option>
+          <option value="openai-compatible">OpenAI 兼容</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">API Key</label>
+        <input type="password" class="form-input" id="editAiApiKey" placeholder="留空则不修改">
+      </div>
+      <div class="form-group" id="editBaseUrlGroup" style="display:none;">
+        <label class="form-label">API Base URL</label>
+        <input type="text" class="form-input" id="editAiBaseUrl">
+      </div>
+      <div class="form-group">
+        <label class="form-label">模型</label>
+        <input type="text" class="form-input" id="editAiModel">
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeEditAiModal()">取消</button>
+        <button class="btn btn-primary" onclick="saveEditAiConfig()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js?v=20260212-19"></script>
 </body>
 </html>

@@ -199,7 +199,9 @@ async function callOpenAICompatible(prompt, apiKey, baseUrl, model) {
         throw new Error('OpenAI 兼容 API 需要提供 Base URL');
     }
 
-    const url = `${baseUrl}/chat/completions`;
+    // 智能处理 URL：确保末尾没有斜杠，然后拼接路径
+    const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+    const url = `${cleanBaseUrl}/chat/completions`;
 
     try {
         const response = await axios.post(url, {
@@ -330,17 +332,25 @@ async function testOpenAI(prompt, apiKey, baseUrl, model) {
  * 测试 OpenAI 兼容 API 连接
  */
 async function testOpenAICompatible(prompt, apiKey, baseUrl, model) {
-    const url = `${baseUrl}/chat/completions`;
+    // 智能处理 URL：确保末尾没有斜杠，然后拼接路径
+    const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+    const url = `${cleanBaseUrl}/chat/completions`;
+
+    const requestBody = {
+        model: model || 'default',
+        messages: [
+            {"role": "user", "content": prompt}
+        ],
+        max_tokens: 100
+    };
+
+    console.log('[AI Test] Request URL:', url);
+    console.log('[AI Test] Model:', model);
+    console.log('[AI Test] API Key prefix:', apiKey.substring(0, 10) + '...');
+    console.log('[AI Test] Request body:', JSON.stringify(requestBody, null, 2));
 
     try {
-        const response = await axios.post(url, {
-            model: model || 'default',
-            messages: [{
-                role: 'user',
-                content: prompt
-            }],
-            max_tokens: 100
-        }, {
+        const response = await axios.post(url, requestBody, {
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${apiKey}`
@@ -356,6 +366,12 @@ async function testOpenAICompatible(prompt, apiKey, baseUrl, model) {
             usage: response.data.usage
         };
     } catch (error) {
+        console.error('[AI Test] Error details:', {
+            status: error.response?.status,
+            statusText: error.response?.statusText,
+            data: error.response?.data,
+            headers: error.config?.headers
+        });
         throw new Error(`API 调用失败: ${error.response?.data?.error?.message || error.message}`);
     }
 }
